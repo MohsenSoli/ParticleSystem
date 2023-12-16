@@ -32,12 +32,13 @@ data class Particle(
         val overlap = size + other.size - distanceBetween(other)
         val directionX = (x - other.x) / distanceBetween(other)
         val directionY = (y - other.y) / distanceBetween(other)
+        val normalOverlap = overlap / (size + other.size)
 
         if (overlap > 0) {
-            x += directionX * overlap / 2
-            y += directionY * overlap / 2
-            other.x -= directionX * overlap / 2
-            other.y -= directionY * overlap / 2
+            x += directionX * other.size * normalOverlap / 2
+            y += directionY * other.size * normalOverlap / 2
+            other.x -= directionX * size * normalOverlap / 2
+            other.y -= directionY * size * normalOverlap / 2
         }
     }
 
