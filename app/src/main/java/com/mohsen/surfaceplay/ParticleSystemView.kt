@@ -42,9 +42,7 @@ class ParticleSystemView @JvmOverloads constructor(
         startParticleSystem()
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        //TODO
-    }
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         stopParticleSystem()
@@ -60,7 +58,7 @@ class ParticleSystemView @JvmOverloads constructor(
     }
 
     private fun stopParticleSystem() {
-        //TODO
+        isActive = false
     }
 
     private fun drawParticles() {
@@ -114,6 +112,7 @@ class ParticleSystemView @JvmOverloads constructor(
     }
 
     private fun addParticles() {
+        if (particleList.isNotEmpty()) return
         repeat(50) {
             val particle = Particle(
                 x = Random.nextFloat() * width,
