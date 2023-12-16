@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -25,9 +26,9 @@ class ParticleSystemView @JvmOverloads constructor(
     private val particleList = CopyOnWriteArrayList<Particle>()
     private val paint: Paint = Paint()
 
-    private val gridSize = 50
+    private val gridSize = 45
     private val grid: Array<Array<MutableList<Particle>>> by lazy {
-        Array(width / gridSize) { Array(height / gridSize) { mutableListOf<Particle>() } }
+        Array(width / gridSize) { Array(height / gridSize) { mutableListOf() } }
     }
 
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -73,6 +74,7 @@ class ParticleSystemView @JvmOverloads constructor(
                 paint.color = particle.color
                 particle.update()
                 it.drawCircle(particle.x, particle.y, particle.size, paint)
+                Log.d("ParticleSystem", "Count : ${particleList.size}")
             }
             surfaceHolder.unlockCanvasAndPost(it)
         }
@@ -83,8 +85,8 @@ class ParticleSystemView @JvmOverloads constructor(
         x += velocityX
         y += velocityY
 
-        if (x - size < 0 || x + size > width) velocityX = -velocityX
-        if (y - size < 0 || y + size > height) velocityY = -velocityY
+        if (x - size <= 0 || x + size >= width) velocityX = -velocityX
+        if (y - size <= 0 || y + size >= height) velocityY = -velocityY
 
         getNearbyParticles().forEach { otherParticle ->
             if (otherParticle !== this && isCollidingWith(otherParticle)) {
@@ -98,14 +100,16 @@ class ParticleSystemView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         when (event?.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                val p = Particle(
-                    x = event.x,
-                    y = event.y,
-                    velocityX = (Random.nextFloat() - 0.5f) * 5,
-                    velocityY = (Random.nextFloat() - 0.5f) * 5,
-                    size = Random.nextFloat() * 10 + 5,
-                )
-                particleList.add(p)
+                repeat(3) {
+                    val p = Particle(
+                        x = event.x,
+                        y = event.y,
+                        velocityX = (Random.nextFloat() - 0.5f) * 5,
+                        velocityY = (Random.nextFloat() - 0.5f) * 5,
+                        size = Random.nextFloat() * 10 + 2,
+                    )
+                    particleList.add(p)
+                }
             }
         }
         return true
@@ -113,13 +117,13 @@ class ParticleSystemView @JvmOverloads constructor(
 
     private fun addParticles() {
         if (particleList.isNotEmpty()) return
-        repeat(50) {
+        repeat(80) {
             val particle = Particle(
                 x = Random.nextFloat() * width,
                 y = Random.nextFloat() * height,
-                velocityX = (Random.nextFloat() - 0.5f) * 5,
-                velocityY = (Random.nextFloat() - 0.5f) * 5,
-                size = Random.nextFloat() * 40 + 5
+                velocityX = (Random.nextFloat() - 0.5f) * 8,
+                velocityY = (Random.nextFloat() - 0.5f) * 8,
+                size = Random.nextFloat() * 40 + 2
             )
             particleList.add(particle)
         }
