@@ -12,7 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
 
@@ -31,7 +30,7 @@ class ParticleSystemView @JvmOverloads constructor(
         Array(width / gridSize) { Array(height / gridSize) { mutableListOf<Particle>() } }
     }
 
-    private val scope = CoroutineScope(Dispatchers.Main.immediate)
+    private val scope = CoroutineScope(Dispatchers.Default)
     var isActive = false
 
     init {
@@ -141,9 +140,11 @@ class ParticleSystemView @JvmOverloads constructor(
 
         (-1..1).forEach { i ->
             (-1..1).forEach { j ->
-                val x = (gridX + i).coerceIn(0, grid.size - 1)
-                val y = (gridY + j).coerceIn(0, grid[0].size - 1)
-                nearbyParticles.addAll(grid[x][y])
+                val x = (gridX + i)
+                val y = (gridY + j)
+                if (x >= 0 && x < grid.size && y >= 0 && y < grid[0].size) {
+                    nearbyParticles.addAll(grid[x][y])
+                }
             }
         }
 
