@@ -13,7 +13,7 @@ data class Particle(
     val color: Int = getRandomColor()
 ) {
 
-    private val mass = (size + 1).pow(2)
+    private val mass = size.pow(2)
 
     fun isCollidingWith(other: Particle): Boolean {
         val distance = sqrt((x - other.x).pow(2f) + (abs(y - other.y)).pow(2f))
@@ -80,7 +80,7 @@ data class Particle(
         val finalOtherVx = ((other.mass - mass) * other.velocityX + 2 * mass * velocityX) / allMass
 
         val finalVy = ((mass - other.mass) * velocityY + 2 * other.mass * other.velocityY) / allMass
-        val finalOtherVy= ((other.mass - mass) * other.velocityY + 2 * mass * velocityY) / allMass
+        val finalOtherVy = ((other.mass - mass) * other.velocityY + 2 * mass * velocityY) / allMass
 
         velocityX = finalVx
         velocityY = finalVy

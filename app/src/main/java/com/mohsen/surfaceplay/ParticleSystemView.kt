@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -25,10 +26,16 @@ class ParticleSystemView @JvmOverloads constructor(
     private val surfaceHolder: SurfaceHolder = holder
     private val particleList = CopyOnWriteArrayList<Particle>()
     private val paint: Paint = Paint()
+    private val textPaint = Paint().apply {
+        textSize = 50f
+        color = Color.WHITE
+        typeface = Typeface.DEFAULT_BOLD
+        setShadowLayer(3f, 3f, 3f, Color.DKGRAY)
+    }
 
-    private val gridSize = 45
+    private val gridSizePixel = 30
     private val grid: Array<Array<MutableList<Particle>>> by lazy {
-        Array(width / gridSize) { Array(height / gridSize) { mutableListOf() } }
+        Array(width / gridSizePixel) { Array(height / gridSizePixel) { mutableListOf() } }
     }
 
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -66,16 +73,18 @@ class ParticleSystemView @JvmOverloads constructor(
         val canvas = surfaceHolder.lockCanvas()
         canvas?.let {
             it.drawColor(Color.BLACK)
-            grid.forEach { column ->
-                column.forEach { cell -> cell.clear() }
-            }
+            it.drawText("Count : ${particleList.size}", 25f, 60f, textPaint)
+            grid.forEach { column -> column.forEach { cell -> cell.clear() } }
             particleList.forEach { particle -> addParticleToGrid(particle) }
             particleList.forEach { particle ->
                 paint.color = particle.color
                 particle.update()
                 it.drawCircle(particle.x, particle.y, particle.size, paint)
-                Log.d("ParticleSystem", "Count : ${particleList.size}")
+                if (particle.x < 400 && particle.y < 200) {
+                    it.drawText("Count : ${particleList.size}", 25f, 60f, textPaint)
+                }
             }
+            Log.d("ParticleSystem", "Count : ${particleList.size}")
             surfaceHolder.unlockCanvasAndPost(it)
         }
     }
@@ -117,29 +126,29 @@ class ParticleSystemView @JvmOverloads constructor(
 
     private fun addParticles() {
         if (particleList.isNotEmpty()) return
-        repeat(80) {
+        repeat(60) {
             val particle = Particle(
                 x = Random.nextFloat() * width,
                 y = Random.nextFloat() * height,
                 velocityX = (Random.nextFloat() - 0.5f) * 8,
                 velocityY = (Random.nextFloat() - 0.5f) * 8,
-                size = Random.nextFloat() * 40 + 2
+                size = Random.nextFloat() * 22 + 2
             )
             particleList.add(particle)
         }
     }
 
     private fun addParticleToGrid(particle: Particle) {
-        val gridX = (particle.x / gridSize).toInt().coerceIn(0, grid.size - 1)
-        val gridY = (particle.y / gridSize).toInt().coerceIn(0, grid[0].size - 1)
+        val gridX = (particle.x / gridSizePixel).toInt().coerceIn(0, grid.size - 1)
+        val gridY = (particle.y / gridSizePixel).toInt().coerceIn(0, grid[0].size - 1)
         grid[gridX][gridY].add(particle)
     }
 
     private fun Particle.getNearbyParticles(): List<Particle> {
         val nearbyParticles = mutableListOf<Particle>()
 
-        val gridX = (x / gridSize).toInt().coerceIn(0, grid.size - 1)
-        val gridY = (y / gridSize).toInt().coerceIn(0, grid[0].size - 1)
+        val gridX = (x / gridSizePixel).toInt().coerceIn(0, grid.size - 1)
+        val gridY = (y / gridSizePixel).toInt().coerceIn(0, grid[0].size - 1)
 
         (-1..1).forEach { i ->
             (-1..1).forEach { j ->
