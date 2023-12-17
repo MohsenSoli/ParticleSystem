@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mohsen.surfaceplay"
+    namespace = "com.mohsen.particle"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.mohsen.surfaceplay"
+        applicationId = "com.mohsen.particle"
         minSdk = 24
         targetSdk = 33
         versionCode = 1

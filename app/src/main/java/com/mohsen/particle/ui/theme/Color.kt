@@ -1,4 +1,4 @@
-package com.mohsen.surfaceplay.ui.theme
+package com.mohsen.particle.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

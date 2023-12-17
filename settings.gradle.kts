@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Surface Play"
+rootProject.name = "Particle System"
 include(":app")
  
