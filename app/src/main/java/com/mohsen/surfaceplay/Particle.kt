@@ -5,15 +5,15 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 data class Particle(
-    var x: Float,
-    var y: Float,
-    var velocityX: Float,
-    var velocityY: Float,
-    val size: Float,
+    var x: Float = 0f,
+    var y: Float = 0f,
+    var velocityX: Float = 0f,
+    var velocityY: Float = 0f,
+    var size: Float = 0f,
     val color: Int = getRandomColor()
 ) {
 
-    private val mass = size.pow(2)
+    private val mass get() = size.pow(2)
 
     fun isCollidingWith(other: Particle): Boolean {
         val distance = sqrt((x - other.x).pow(2f) + (abs(y - other.y)).pow(2f))
