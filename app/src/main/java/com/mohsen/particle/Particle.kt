@@ -10,7 +10,6 @@ data class Particle(
     var velocityX: Float = 0f,
     var velocityY: Float = 0f,
     var size: Float = 0f,
-    val color: Int = getRandomColor()
 ) {
 
     private val mass get() = size.pow(2)

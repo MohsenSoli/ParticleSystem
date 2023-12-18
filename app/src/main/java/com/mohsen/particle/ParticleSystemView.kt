@@ -3,6 +3,7 @@ package com.mohsen.particle
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.TypedArray
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -17,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Collections
 import java.util.LinkedList
+import kotlin.math.pow
 import kotlin.random.Random
 
 
@@ -60,6 +62,25 @@ class ParticleSystemView @JvmOverloads constructor(
         stopParticleSystem()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        val styledAttributes: TypedArray = context.theme.obtainStyledAttributes(
+            intArrayOf(android.R.attr.actionBarSize)
+        )
+        // getting event.y on a thread other than main, adds action bar height !!!!!!!
+        val actionBarSize = styledAttributes.getDimension(0, 0f).toInt()
+        styledAttributes.recycle()
+
+        scope.launch {
+            when (event?.action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                    createParticles(event.x, event.y - actionBarSize)
+                }
+            }
+        }
+        return true
+    }
+
     private fun startParticleSystem() {
         scope.launch {
             while (isActive) {
@@ -75,34 +96,60 @@ class ParticleSystemView @JvmOverloads constructor(
 
     private fun drawParticles() {
         val canvas = surfaceHolder.lockCanvas()
-        canvas?.let {
-            it.drawColor(Color.BLACK)
-            it.drawText("Count : ${particleList.size}", 25f, 60f, textPaint)
+        canvas?.let { cnv ->
+            cnv.drawColor(Color.BLACK)
+            cnv.drawText("Count : ${particleList.size}", 25f, 60f, textPaint)
             grid.forEach { column -> column.forEach { cell -> cell.clear() } }
             synchronized(particleList) {
-                val iterator = particleList.iterator()
-                while (iterator.hasNext()) {
-                    val particle = iterator.next()
-                    val isOut = particle.isOutOfScreen()
-                    if (isOut) {
-                        pool.releaseParticle(particle)
-                        iterator.remove()
-                    } else {
-                        addParticleToGrid(particle)
-                    }
-                }
-
+                addOrRemove()
                 particleList.forEach { particle ->
-                    paint.color = particle.color
+                    paint.color = particle.getColor()
                     particle.update()
-                    it.drawCircle(particle.x, particle.y, particle.size, paint)
+
+                    drawLines(particle, canvas)
+                    cnv.drawCircle(particle.x, particle.y, particle.size, paint)
                     if (particle.x < 400 && particle.y < 200) {
-                        it.drawText("Count : ${particleList.size}", 25f, 60f, textPaint)
+                        cnv.drawText("Count : ${particleList.size}", 25f, 60f, textPaint)
                     }
                 }
             }
             Log.d("ParticleSystem", "Count : ${particleList.size}")
-            surfaceHolder.unlockCanvasAndPost(it)
+            surfaceHolder.unlockCanvasAndPost(cnv)
+        }
+    }
+
+    private fun Particle.getColor(): Int {
+        val r = (x * 256 / width).toInt().coerceIn(0, 255)
+        val g = ((height - y) * 256 / height).toInt().coerceIn(0, 255)
+        val b = (size.pow(2)).toInt().coerceIn(0, 255)
+        return rgb(
+            r = r,
+            g = g,
+            b = b
+        )
+    }
+
+    private fun drawLines(particle: Particle, canvas: Canvas) {
+        if (particle.size > 15) {
+            particle.getNearbyParticles(4).forEach { otherParticle ->
+                if (otherParticle.size < 15) {
+                    canvas.drawLine(particle.x, particle.y, otherParticle.x, otherParticle.y, paint)
+                }
+            }
+        }
+    }
+
+    private fun addOrRemove() {
+        val iterator = particleList.iterator()
+        while (iterator.hasNext()) {
+            val particle = iterator.next()
+            val isOut = particle.isOutOfScreen()
+            if (isOut) {
+                pool.releaseParticle(particle)
+                iterator.remove()
+            } else {
+                addParticleToGrid(particle)
+            }
         }
     }
 
@@ -135,38 +182,22 @@ class ParticleSystemView @JvmOverloads constructor(
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        val styledAttributes: TypedArray = context.theme.obtainStyledAttributes(
-            intArrayOf(android.R.attr.actionBarSize)
-        )
-        // getting event.y on a thread other than main, adds action bar height !!!!!!!!!!
-        val actionBarSize = styledAttributes.getDimension(0, 0f).toInt()
-        styledAttributes.recycle()
-        event?.let { ev ->
-            scope.launch {
-                when (ev.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                        repeat(5) {
-                            val p = pool.getParticle(
-                                x = ev.x,
-                                y = ev.y - actionBarSize,
-                                velocityX = (Random.nextFloat() - 0.5f) * 5,
-                                velocityY = (Random.nextFloat() - 0.5f) * 5,
-                                size = Random.nextFloat() * 10 + 2,
-                            )
-                            particleList.add(p)
-                        }
-                    }
-                }
-            }
+    private fun createParticles(x: Float, y: Float) {
+        repeat(5) {
+            val p = pool.getParticle(
+                x = x,
+                y = y,
+                velocityX = (Random.nextFloat() - 0.5f) * 5,
+                velocityY = (Random.nextFloat() - 0.5f) * 5,
+                size = Random.nextFloat() * 10 + 2,
+            )
+            particleList.add(p)
         }
-        return true
     }
 
     private fun addParticles() {
         if (particleList.isNotEmpty()) return
-        repeat(60) {
+        repeat(100) {
             val particle = pool.getParticle(
                 x = Random.nextFloat() * width,
                 y = Random.nextFloat() * height,
@@ -184,14 +215,14 @@ class ParticleSystemView @JvmOverloads constructor(
         grid[gridX][gridY].add(particle)
     }
 
-    private fun Particle.getNearbyParticles(): List<Particle> {
+    private fun Particle.getNearbyParticles(range: Int = 1): List<Particle> {
         val nearbyParticles = mutableListOf<Particle>()
 
         val gridX = (x / gridSizePixel).toInt().coerceIn(0, grid.size - 1)
         val gridY = (y / gridSizePixel).toInt().coerceIn(0, grid[0].size - 1)
 
-        (-1..1).forEach { i ->
-            (-1..1).forEach { j ->
+        (-range..range).forEach { i ->
+            (-range..range).forEach { j ->
                 val x = (gridX + i)
                 val y = (gridY + j)
                 if (x >= 0 && x < grid.size && y >= 0 && y < grid[0].size) {
@@ -218,4 +249,8 @@ fun getRandomColor(): Int {
     val green = Random.nextInt(256)
     val blue = Random.nextInt(256)
     return Color.rgb(red, green, blue)
+}
+
+fun rgb(r: Int = 128, g: Int = 128, b: Int = 128): Int {
+    return Color.rgb(r, g, b)
 }
